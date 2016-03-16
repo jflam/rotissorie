@@ -1,0 +1,65 @@
+---
+title: Rotissorie League 2015
+output: html_document
+---
+
+```{r, echo = FALSE, message = FALSE}
+library(DT)
+source("script.R")
+display_table <- function(pos) {
+	outfielders <- eligible_hitters_by_position %>%
+		filter(POS == pos) %>%
+		inner_join(rollup_batting) %>%
+		mutate(Name = sprintf("%s %s", FirstName, LastName)) %>%
+		select(Name, AVG, R, HR, RBI, SB)
+	datatable(outfielders)
+}
+```
+
+## Outfielders
+
+```{r, echo = FALSE, message = FALSE}
+display_table(c("LF", "CF", "RF", "OF"))
+```
+
+## Catchers
+
+```{r, echo = FALSE, message = FALSE}
+display_table("C")
+```
+
+## First basemen
+
+```{r, echo = FALSE, message = FALSE}
+display_table("1B")
+```
+
+## Second basemen
+
+```{r, echo = FALSE, message = FALSE}
+display_table("2B")
+```
+
+# Third basemen
+
+```{r, echo = FALSE, message = FALSE}
+display_table("3B")
+```
+
+# Shortstop
+
+```{r, echo = FALSE, message = FALSE}
+display_table("SS")
+```
+
+# Corner infielder
+
+```{r, echo = FALSE, message = FALSE}
+display_table(c("1B", "3B"))
+```
+
+# Middle infielder
+
+```{r, echo = FALSE, message = FALSE}
+display_table(c("SS", "2B"))
+```
