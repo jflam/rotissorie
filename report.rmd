@@ -40,26 +40,46 @@ display_table("1B")
 display_table("2B")
 ```
 
-# Third basemen
+## Third basemen
 
 ```{r, echo = FALSE, message = FALSE}
 display_table("3B")
 ```
 
-# Shortstop
+## Shortstop
 
 ```{r, echo = FALSE, message = FALSE}
 display_table("SS")
 ```
 
-# Corner infielder
+## Corner infielder
 
 ```{r, echo = FALSE, message = FALSE}
 display_table(c("1B", "3B"))
 ```
 
-# Middle infielder
+## Middle infielder
 
 ```{r, echo = FALSE, message = FALSE}
 display_table(c("SS", "2B"))
+```
+
+## Starting pitchers
+
+```{r, echo = FALSE, message = FALSE}
+starting_pitchers <- rollup_pitching %>%
+	filter(GS > 0) %>%
+	mutate(Name = sprintf("%s %s", FirstName, LastName)) %>%
+	select(Name, W, SV, SO, ERA, WHIP)
+datatable(starting_pitchers)
+```
+
+## Relief pitchers
+
+```{r, echo = FALSE, message = FALSE}
+relief_pitchers <- rollup_pitching %>%
+	filter(GS == 0) %>%
+	mutate(Name = sprintf("%s %s", FirstName, LastName)) %>%
+	select(Name, W, SV, SO, ERA, WHIP)
+datatable(relief_pitchers)
 ```
