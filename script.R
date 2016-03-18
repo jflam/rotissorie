@@ -25,10 +25,10 @@ rollup_batting <- batting %>%
         BB = sum(BB)
     ) %>%
     mutate(
-        AVG = sprintf("%.3f", (H / AB)),
+        AVG = H / AB,
         S = H - (X2B + X3B + HR), 
         TB = S + 2 * X2B + 3 * X3B + 4 * HR,
-        SLG = sprintf("%.3f", (TB / AB))
+        SLG = TB / AB
     )
 
 eligible_hitters_by_position <- fielding %>%
@@ -54,8 +54,8 @@ rollup_pitching <- pitching %>%
         SO = sum(SO)
     ) %>%
     mutate(
-        ERA = sprintf("%0.2f", ER / (IPouts / 3 / 9)),
-        WHIP = sprintf("%0.3f", (BB + H) / (IPouts / 3))
+        ERA = ER / (IPouts / 3 / 9),
+        WHIP = (BB + H) / (IPouts / 3)
     ) %>%
     inner_join(player_names) %>%
     select(playerID, FirstName = nameFirst, LastName = nameLast, W, L, G, GS, SV, H, BB, ER, IPouts, SO, ERA, WHIP) 

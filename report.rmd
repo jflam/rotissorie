@@ -1,18 +1,25 @@
 ---
-title: Rotissorie League 2015
+title: Rotissorie League 2016
 output: html_document
 ---
 
 ```{r, echo = FALSE, message = FALSE}
 library(DT)
 source("script.R")
-display_table <- function(pos) {
-	outfielders <- eligible_hitters_by_position %>%
+
+get_hitters <- function(pos) {
+	hitters <- eligible_hitters_by_position %>%
 		filter(POS == pos) %>%
 		inner_join(rollup_batting) %>%
 		mutate(Name = sprintf("%s %s", FirstName, LastName)) %>%
 		select(Name, AVG, R, HR, RBI, SB)
-	datatable(outfielders)
+	hitters
+}
+
+display_table <- function(pos) {
+	get_hitters(pos) %>%
+		datatable() %>%
+		formatRound("AVG", digits = 3)
 }
 ```
 
@@ -70,16 +77,161 @@ display_table(c("SS", "2B"))
 starting_pitchers <- rollup_pitching %>%
 	filter(GS > 0) %>%
 	mutate(Name = sprintf("%s %s", FirstName, LastName)) %>%
-	select(Name, W, SV, SO, ERA, WHIP)
-datatable(starting_pitchers)
+	select(Name, W, SV, SO, BB, ERA, WHIP)
+datatable(starting_pitchers) %>% 
+	formatRound(c("ERA", "WHIP"), digits = c(2, 3))
 ```
 
 ## Relief pitchers
 
 ```{r, echo = FALSE, message = FALSE}
 relief_pitchers <- rollup_pitching %>%
-	filter(GS == 0) %>%
+	filter(GS == 0 & SV > 10) %>%
 	mutate(Name = sprintf("%s %s", FirstName, LastName)) %>%
-	select(Name, W, SV, SO, ERA, WHIP)
-datatable(relief_pitchers)
+	select(Name, W, SV, SO, BB, ERA, WHIP)
+datatable(relief_pitchers) %>%
+	formatRound(c("ERA", "WHIP"), digits = c(2, 3))
 ```
+
+## Correlation of different pitching statistics for starting pitchers
+
+<div class="row">
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  library(ggvis)
+  starting_pitchers %>%
+    ggvis(~W, ~ERA) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  starting_pitchers %>%
+	ggvis(~W, ~BB) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  starting_pitchers %>%
+    ggvis(~W, ~SO) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+</div>
+
+## Correlation of different pitching statistics for relief pitchers
+
+<div class="row">
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  relief_pitchers %>%
+    ggvis(~SV, ~ERA) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  relief_pitchers %>%
+	ggvis(~SV, ~BB) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  relief_pitchers %>%
+    ggvis(~SV, ~SO) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  relief_pitchers %>%
+    ggvis(~SO, ~ERA) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  relief_pitchers %>%
+	ggvis(~SO, ~BB) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  relief_pitchers %>%
+    ggvis(~SO, ~W) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+</div>
+
+## Correlation of different batting statistics
+
+<div class="row">
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  filtered <- rollup_batting %>%
+    filter(AVG < 0.400 & AVG > 0.200)
+
+  filtered %>%
+    ggvis(~RBI, ~HR) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  filtered %>%
+	ggvis(~RBI, ~H) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  filtered %>%
+    ggvis(~RBI, ~BB) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  filtered %>%
+    ggvis(~AVG, ~HR) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  filtered %>%
+	ggvis(~AVG, ~H) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  filtered %>%
+    ggvis(~AVG, ~BB) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+</div>
