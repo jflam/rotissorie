@@ -12,17 +12,21 @@ get_hitters <- function(pos) {
 		filter(POS == pos) %>%
 		inner_join(rollup_batting) %>%
 		mutate(Name = sprintf("%s %s", FirstName, LastName)) %>%
-		select(Name, AVG, R, HR, RBI, SB)
+		select(Name, POS, AVG, R, HR, RBI, SB)
 	hitters
 }
 
 display_table <- function(pos) {
 	get_hitters(pos) %>%
-		datatable() %>%
+		datatable(filter = "top", options = list(
+		  initComplete = JS(
+			"function(settings, json) {",
+			"$(this.api().table().header()).css({'background-color': '#000', 'color': '#fff'});",
+			"}")
+		)) %>%
 		formatRound("AVG", digits = 3)
 }
 ```
-
 ## Outfielders
 
 ```{r, echo = FALSE, message = FALSE}
@@ -230,6 +234,32 @@ datatable(relief_pitchers) %>%
 ```{r, echo = FALSE, message = FALSE}
   filtered %>%
     ggvis(~AVG, ~BB) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  filtered %>%
+    ggvis(~X3B, ~SB) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  filtered %>%
+	ggvis(~BB, ~RBI) %>%
+	set_options(width = "auto", height = "300", resizable=FALSE) %>%
+    layer_points()
+```
+  </div>
+  <div class="col-md-4">
+```{r, echo = FALSE, message = FALSE}
+  filtered %>%
+    ggvis(~HR, ~H) %>%
 	set_options(width = "auto", height = "300", resizable=FALSE) %>%
     layer_points()
 ```
