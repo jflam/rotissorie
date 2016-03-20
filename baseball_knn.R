@@ -36,9 +36,26 @@ rollup_batting <- batting %>%
 batting_training <- rollup_batting %>%
     filter(yearID > 1990 & yearID < 2014 & G > minimum_game_threshold)
 
+
 batting_testing <- rollup_batting %>%
     filter(yearID == 2014 & G > minimum_game_threshold)
 
+c1 <- batting_testing$playerID
+c2 <- rollup_batting %>%
+    filter(yearID == 2015) %>%
+    select(playerID)
+c3 <- c2$playerID
+c4 <- as.data.frame(intersect(c1, c3))
+names(c4) <- "playerID"
+
 batting_validation <- rollup_batting %>%
     filter(yearID == 2015) %>%
-    inner_join(batting_testing, by = "playerID")
+    inner_join(c4)
+    
+# Ensure that we have the intersection 
+batting_testing <- batting_testing %>%
+    inner_join(c4, by = "playerID")
+
+player_ids <- batting_training$playerID
+library(class)
+results <- knn(batting_training, batting_testing, player_ids, k = 3)
