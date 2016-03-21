@@ -24,6 +24,7 @@ rollup_batting <- batting %>%
         X3B = sum(X3B),
         HR = sum(HR),
         RBI = sum(RBI),
+        SO = sum(SO),
         SB = sum(SB),
         CS = sum(CS),
         BB = sum(BB)) %>%
@@ -57,9 +58,9 @@ batting_testing <- batting_testing %>%
     inner_join(c4, by = "playerID")
 
 # Remove all non-numeric data
-training <- batting_training[3:17]
-testing <- batting_testing[3:17]
-validation <- batting_validation[3:17]
+training <- batting_training[3:18]
+testing <- batting_testing[3:18]
+validation <- batting_validation[3:18]
 
 player_ids <- batting_training$ID
 library(class)
@@ -68,16 +69,32 @@ results <- knn(training, testing, player_ids, k = 3)
 # Print out a report so we can eyeball the results
 library(DT)
 
-m0 <- batting_testing[c('playerID', 'G', 'R', 'X2B', 'X3B', 'HR', 'RBI', 'SB')]
-m1 <- as.data.frame(results)
-names(m1) <- "ID"
-m2 <- batting_training %>%
-    inner_join(m1, by = "ID") %>%
-    select(ID, G, R, X2B, X3B, HR, RBI, SB)
+b0 <- as.data.frame(batting_testing$playerID)
+names(b0) <- "playerID"
+b0$ID <- results
 
-# Create comparison
+b1 <- batting_training[c("ID", "playerID", "yearID", "G", "R", "X2B", "X3B", "HR", "SO", "RBI", "SB")]
+names(b1)[names(b1)=="playerID"] <- "referenceID"
+b2 <- batting_testing[c('playerID', 'G', 'R', 'X2B', 'X3B', 'HR', "SO", 'RBI', 'SB')]
 
-comparison <- m0 %>%
-    inner_join(m2, by = "ID")
+comparison <- b0 %>% inner_join(b1) %>% inner_join(b2, by = "playerID") %>%
+    select(playerID, G.x, R.x, X2B.x, X3B.x, SO.x, HR.x, RBI.x, SB.x, referenceID, yearID, G.y, R.y, X2B.y, X3B.y, SO.y, HR.y, RBI.y, SB.y)
 
-    
+datatable(comparison)
+
+# Dataframe containing referenceIDs and year + 1
+z1 <- comparison[c("playerID", "referenceID", "yearID")]
+z1$yearID = z1$yearID + 1
+prediction <- z1 %>%
+    inner_join(batting_training, by = c("referenceID" = "playerID", "yearID")) %>%
+    select(playerID, referenceID, yearID, G, AB, R, H, X2B, X3B, HR, RBI, SO, SB, BB, AVG)
+
+# Prediction comparison
+predict_comparison <- prediction %>%
+    inner_join(batting_validation, by = "playerID") %>%
+    select(playerID, G.y, AB.y, R.y, H.y, X2B.y, X3B.y, HR.y, RBI.y, SO.y, SB.y, AVG.y, referenceID, yearID.x, G.x, AB.x, R.x, H.x, X2B.x, X3B.x, HR.x, RBI.x, SO.x, SB.x, AVG.x)
+
+datatable(predict_comparison) %>%
+    formatRound(c("AVG.y", "AVG.x"), digits = 3)
+
+# Generate the prediction table with positions
