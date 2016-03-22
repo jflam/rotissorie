@@ -8,7 +8,6 @@ shinyUI(fluidPage(
         sidebarPanel(
             helpText("Show predicted stats for hitter"),
             uiOutput("controls"),
-            width = 4
         ),
         mainPanel(
 
