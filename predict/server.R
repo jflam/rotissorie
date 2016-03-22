@@ -1,5 +1,6 @@
 library(shiny)
 library(DT)
+library(dplyr)
 
 # This code runs exactly once. We call the function to compute the model
 
@@ -12,7 +13,7 @@ shinyServer(function(input, output) {
     # contains the list of countries sorted alphabetically
 
     output$controls <- renderUI({
-        selectInput("country",
+        selectInput("position",
             label = "Select a position",
             choices = positions, 
             selected = "C"
@@ -20,6 +21,6 @@ shinyServer(function(input, output) {
     })
 
     output$table <- renderDataTable({
-        prediction
+        datatable(prediction %>% filter(POS == input$position)) %>% formatRound("AVG", digits = 3)
     })
 })

@@ -7,17 +7,13 @@ shinyUI(fluidPage(
     sidebarLayout(
         sidebarPanel(
             helpText("Show predicted stats for hitter"),
-
-            # Country selector control is generated on the server 
-            # and sent to client
-
-            uiOutput("controls")
+            uiOutput("controls"),
+            width = 4
         ),
         mainPanel(
 
             # This is where the generated table lives
-
-            leafletOutput("table")
+            dataTableOutput("table")
         )
     )
 ))

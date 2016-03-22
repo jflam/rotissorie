@@ -115,16 +115,16 @@ minimum_game_threshold <- 100
         select(FirstName, LastName, POS, referenceID, yearID, G, AB, R, H, X2B, X3B, HR, RBI, SO, SB, BB, AVG)
 
     # Prediction comparison
-    predict_comparison <- prediction %>%
-        inner_join(answer_set, by = "playerID") %>%
-        select(playerID, G.y, AB.y, R.y, H.y, X2B.y, X3B.y, HR.y, RBI.y, SO.y, SB.y, AVG.y, referenceID, yearID.x, G.x, AB.x, R.x, H.x, X2B.x, X3B.x, HR.x, RBI.x, SO.x, SB.x, AVG.x) %>%
-        inner_join(eligible_hitters_by_position, by = "playerID") %>%
-        select(FirstName, LastName, POS, G.y, AB.y, R.y, H.y, X2B.y, X3B.y, HR.y, RBI.y, SO.y, SB.y, AVG.y, referenceID, yearID.x, G.x, AB.x, R.x, H.x, X2B.x, X3B.x, HR.x, RBI.x, SO.x, SB.x, AVG.x)
+    #predict_comparison <- prediction %>%
+        #inner_join(answer_set, by = "playerID") %>%
+        #select(playerID, G.y, AB.y, R.y, H.y, X2B.y, X3B.y, HR.y, RBI.y, SO.y, SB.y, AVG.y, referenceID, yearID.x, G.x, AB.x, R.x, H.x, X2B.x, X3B.x, HR.x, RBI.x, SO.x, SB.x, AVG.x) %>%
+        #inner_join(eligible_hitters_by_position, by = "playerID") %>%
+        #select(FirstName, LastName, POS, G.y, AB.y, R.y, H.y, X2B.y, X3B.y, HR.y, RBI.y, SO.y, SB.y, AVG.y, referenceID, yearID.x, G.x, AB.x, R.x, H.x, X2B.x, X3B.x, HR.x, RBI.x, SO.x, SB.x, AVG.x)
 
-    # Compute RMS of deviation from actual
-    deviation <- data.frame(
-            "HR" = sqrt(mean(predict_comparison$HR.y - predict_comparison$HR.x) ^ 2),
-            "RBI" = sqrt(mean(predict_comparison$RBI.y - predict_comparison$RBI.x) ^ 2),
-            "R" = sqrt(mean(predict_comparison$R.y - predict_comparison$R.x) ^ 2),
-            "SB" = sqrt(mean(predict_comparison$SB.y - predict_comparison$SB.x) ^ 2),
-            "AVG" = sqrt(mean(predict_comparison$AVG.y - predict_comparison$AVG.x) ^ 2))
+    ## Compute RMS of deviation from actual
+    #deviation <- data.frame(
+            #"HR" = sqrt(mean(predict_comparison$HR.y - predict_comparison$HR.x) ^ 2),
+            #"RBI" = sqrt(mean(predict_comparison$RBI.y - predict_comparison$RBI.x) ^ 2),
+            #"R" = sqrt(mean(predict_comparison$R.y - predict_comparison$R.x) ^ 2),
+            #"SB" = sqrt(mean(predict_comparison$SB.y - predict_comparison$SB.x) ^ 2),
+            #"AVG" = sqrt(mean(predict_comparison$AVG.y - predict_comparison$AVG.x) ^ 2))
