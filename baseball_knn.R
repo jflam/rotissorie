@@ -13,7 +13,7 @@ fielding <- read.csv("fielding.csv", stringsAsFactors = FALSE)
 # 3. Minimum number of games played to consider
 # Returns: list containing 
 #   data frame with predictions
-#   data frame with goodness 
+#   data frame with standard deviation of predictions from actuals
 # Algorithm:
 # Simplest possible scenario is
 # 1. Single-season performances only
@@ -24,7 +24,7 @@ prediction_year <- 2014
 years_to_train <- 30
 minimum_game_threshold <- 100
 
-# predict_batting_statistics <- function(prediction_year, years_to_train, minimum_game_threshold) {
+predict_batting_statistics <- function(prediction_year, years_to_train, minimum_game_threshold) {
     start_training_year = prediction_year - years_to_train
 
     # Batting statistics have line items for each team a player played on during the year
@@ -219,6 +219,10 @@ minimum_game_threshold <- 100
             BB
         )
 
-    library(DT)
-    datatable(prediction) %>%
-        formatRound("AVG", digits = 3)
+    # Construct list with results - predictions and standard deviation of the predictions
+    list(predictions = eligible_hitters_stats_by_position, stddev = prediction_stddev)
+}
+
+results <- predict_batting_statistics(2013, 30, 100)
+library(DT)
+datatable(results$predictions)
