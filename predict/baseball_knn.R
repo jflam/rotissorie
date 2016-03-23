@@ -185,8 +185,12 @@ predict_batting_statistics <- function(prediction_year, years_to_train, minimum_
         SB.rms = sd(prediction_stats$SB - prediction_stats$SB.p),
         BB.rms = sd(prediction_stats$BB - prediction_stats$BB.p))
 
+    # Outfielders are called LF, RF, CF and OF. Normalize all of them to be OF and collapse
+    normalized_fielding <- fielding %>%
+        mutate(POS = ifelse(POS == "LF" | POS == "RF" | POS == "CF", "OF", POS))
+
     # Compute table of eligible players by position and their predicted stats
-    eligible_hitters_stats_by_position <- fielding %>%
+    eligible_hitters_stats_by_position <- normalized_fielding %>%
         filter(yearID == prediction_year) %>%
         select(playerID, POS) %>%
         inner_join(prediction_stats, by = c("playerID" = "PlayerID")) %>%
@@ -204,7 +208,13 @@ predict_batting_statistics <- function(prediction_year, years_to_train, minimum_
             RBI = RBI.p,
             SO = SO.p,
             SB = SB.p,
-            BB = BB.p)
+            BB = BB.p
+        ) %>%
+        distinct(
+            FirstName,
+            LastName,
+            POS
+        )
 
     # Construct list with results - predictions and standard deviation of the predictions
     list(predictions = eligible_hitters_stats_by_position, stddev = prediction_stddev)

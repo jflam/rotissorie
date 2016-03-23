@@ -7,7 +7,7 @@ library(dplyr)
 source("baseball_knn.R")
 results <- predict_batting_statistics(2014, 30, 100)
 predictions <- results$predictions
-positions = c("C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "OF")
+positions = c("C", "1B", "2B", "3B", "SS", "OF")
 
 shinyServer(function(input, output) {
 
