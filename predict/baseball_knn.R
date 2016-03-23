@@ -199,7 +199,6 @@ predict_pitching_statistics <- function(prediction_year, years_to_train, minimum
     list(predictions = prediction_stats, stddev = prediction_stddev)
 }
 
-
 # Parameters:
 # 1. Year to predict
 # 2. Year to compare against
@@ -230,7 +229,7 @@ predict_batting_statistics <- function(prediction_year, years_to_train, minimum_
             select(playerID))
 
     answer_set <- rollup_batting %>%
-        filter(yearID == 2015 & G > minimum_game_threshold) %>%
+        filter(yearID == prediction_year + 1 & G > minimum_game_threshold) %>%
         inner_join(player_ids, by = "playerID")
 
     testing_set <- testing_set %>%
@@ -385,8 +384,26 @@ predict_batting_statistics <- function(prediction_year, years_to_train, minimum_
     list(predictions = eligible_hitters_stats_by_position, stddev = prediction_stddev)
 }
 
-
 # Simplest possible algorithm is to assume next year is same as this year
-predict_batting_statistics_naive <- function(prediction_year) {
-    
+predict_batting_statistics_naive <- function(prediction_year, minimum_game_threshold) {
+
+    testing_set <- rollup_batting %>%
+        filter(yearID == prediction_year & G > minimum_game_threshold)
+
+    player_ids <- intersect(
+        testing_set %>%
+            select(playerID),
+        rollup_batting %>%
+            filter(yearID == prediction_year + 1 & G > minimum_game_threshold) %>%
+            select(playerID))
+
+    answer_set <- rollup_batting %>%
+        filter(yearID == prediction_year + 1 & G > minimum_game_threshold) %>%
+        inner_join(player_ids, by = "playerID")
+
+    testing_set <- testing_set %>%
+        inner_join(player_ids, by = "playerID")
+
+    prediction_stats <- data.frame(
+    )
 }
