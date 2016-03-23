@@ -7,48 +7,74 @@ pitching <- read.csv("../pitching.csv", stringsAsFactors = FALSE)
 player_names <- read.csv("../master.csv", stringsAsFactors = FALSE)
 fielding <- read.csv("../fielding.csv", stringsAsFactors = FALSE)
 
+# Compute globals for rollup pitching and batting statistics
+# We don't care about teams, so we need to compute the rollup for each year
+
+rollup_pitching <- pitching %>%
+    group_by(yearID, playerID) %>%
+    summarize(
+        W = sum(W),
+        L = sum(L),
+        G = sum(G),
+        GS = sum(GS),
+        SV = sum(SV),
+        H = sum(H),
+        BB = sum(BB),
+        ER = sum(ER),
+        IPouts = sum(IPouts),
+        SO = sum(SO)
+    ) %>%
+    mutate(
+        ERA = ER / (IPouts / 3 / 9),
+        WHIP = (BB + H) / (IPouts / 3),
+        ID = sprintf("%s-%s", playerID, yearID)
+    ) %>%
+    as.data.frame()
+
+rollup_batting <- batting %>%
+    group_by(yearID, playerID) %>%
+    summarize(
+        G = sum(G),
+        AB = sum(AB),
+        R = sum(R),
+        H = sum(H),
+        X2B = sum(X2B),
+        X3B = sum(X3B),
+        HR = sum(HR),
+        RBI = sum(RBI),
+        SO = sum(SO),
+        SB = sum(SB),
+        CS = sum(CS),
+        BB = sum(BB)) %>%
+    mutate(
+        AVG = H / AB,
+        S = H - (X2B + X3B + HR),
+        TB = S + 2 * X2B + 3 * X3B + 4 * HR,
+        SLG = TB / AB,
+        # BUG in R? If we try to call as.factor() on sprintf() below it 
+        # winds up with all of the yearIDs being the same year in the factors (1984)
+        ID = sprintf("%s-%s", playerID, yearID)) %>%
+    as.data.frame()
+
 predict_pitching_statistics <- function(prediction_year, years_to_train, minimum_game_threshold) {
     start_training_year = prediction_year - years_to_train
 
-    # Pitching statistics have line items for each team a player played on during the year
-    rollup_pitching <- pitching %>%
-        filter(yearID >= start_training_year & G > minimum_game_threshold) %>%
-        group_by(yearID, playerID) %>%
-        summarize(
-            W = sum(W),
-            L = sum(L),
-            G = sum(G),
-            GS = sum(GS),
-            SV = sum(SV),
-            H = sum(H),
-            BB = sum(BB),
-            ER = sum(ER),
-            IPouts = sum(IPouts),
-            SO = sum(SO)
-        ) %>%
-        mutate(
-            ERA = ER / (IPouts / 3 / 9),
-            WHIP = (BB + H) / (IPouts / 3),
-            ID = sprintf("%s-%s", playerID, yearID)
-        ) %>%
-        as.data.frame()
-
     training_set <- rollup_pitching %>%
-        filter(yearID < prediction_year)
+        filter(yearID >= start_training_year & yearID < prediction_year & G > minimum_game_threshold)
 
     testing_set <- rollup_pitching %>%
-        filter(yearID == prediction_year)
+        filter(yearID == prediction_year & G > minimum_game_threshold)
 
     player_ids <- intersect(
         testing_set %>%
             select(playerID),
         rollup_pitching %>%
-            filter(yearID == prediction_year + 1) %>%
+            filter(yearID == prediction_year + 1 & G > minimum_game_threshold) %>%
             select(playerID)
     )
 
     answer_set <- rollup_pitching %>%
-        filter(yearID == 2015) %>%
+        filter(yearID == 2015 & G > minimum_game_threshold) %>%
         inner_join(player_ids, by = "playerID")
 
     testing_set <- testing_set %>%
@@ -174,7 +200,6 @@ predict_pitching_statistics <- function(prediction_year, years_to_train, minimum
 }
 
 
-
 # Parameters:
 # 1. Year to predict
 # 2. Year to compare against
@@ -191,49 +216,21 @@ predict_pitching_statistics <- function(prediction_year, years_to_train, minimum
 predict_batting_statistics <- function(prediction_year, years_to_train, minimum_game_threshold) {
     start_training_year = prediction_year - years_to_train
 
-    # Batting statistics have line items for each team a player played on during the year
-    # We don't care about this, so we need to compute the rollup for each year
-    rollup_batting <- batting %>%
-        filter(yearID >= start_training_year & G > minimum_game_threshold) %>%
-        group_by(yearID, playerID) %>%
-        summarize(
-            G = sum(G),
-            AB = sum(AB),
-            R = sum(R),
-            H = sum(H),
-            X2B = sum(X2B),
-            X3B = sum(X3B),
-            HR = sum(HR),
-            RBI = sum(RBI),
-            SO = sum(SO),
-            SB = sum(SB),
-            CS = sum(CS),
-            BB = sum(BB)) %>%
-        mutate(
-            AVG = H / AB,
-            S = H - (X2B + X3B + HR),
-            TB = S + 2 * X2B + 3 * X3B + 4 * HR,
-            SLG = TB / AB,
-            # BUG in R? If we try to call as.factor() on sprintf() below it 
-            # winds up with all of the yearIDs being the same year in the factors (1984)
-            ID = sprintf("%s-%s", playerID, yearID)) %>%
-        as.data.frame()
-
     training_set <- rollup_batting %>%
-        filter(yearID < prediction_year)
+        filter(yearID >= start_training_year & yearID < prediction_year & G > minimum_game_threshold)
 
     testing_set <- rollup_batting %>%
-        filter(yearID == prediction_year)
+        filter(yearID == prediction_year & G > minimum_game_threshold)
 
     player_ids <- intersect(
         testing_set %>%
             select(playerID),
         rollup_batting %>%
-            filter(yearID == prediction_year + 1) %>%
+            filter(yearID == prediction_year + 1 & G > minimum_game_threshold) %>%
             select(playerID))
 
     answer_set <- rollup_batting %>%
-        filter(yearID == 2015) %>%
+        filter(yearID == 2015 & G > minimum_game_threshold) %>%
         inner_join(player_ids, by = "playerID")
 
     testing_set <- testing_set %>%
@@ -386,4 +383,10 @@ predict_batting_statistics <- function(prediction_year, years_to_train, minimum_
 
     # Construct list with results - predictions and standard deviation of the predictions
     list(predictions = eligible_hitters_stats_by_position, stddev = prediction_stddev)
+}
+
+
+# Simplest possible algorithm is to assume next year is same as this year
+predict_batting_statistics_naive <- function(prediction_year) {
+    
 }
