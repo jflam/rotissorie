@@ -39,11 +39,11 @@ shinyServer(function(input, output) {
 
     output$starters <- renderDataTable({
         datatable(starters) %>%
-            formatRound(c("ERA", "WHIP", "ERA.p", "WHIP.p"), digits = 3)
+            formatRound(c("ERA", "WHIP", "ERA.p", "WHIP.p"), digits = c(2,3,2,3))
     })
 
     output$closers <- renderDataTable({
         datatable(closers) %>%
-            formatRound(c("ERA", "WHIP", "ERA.p", "WHIP.p"), digits = 3)
+            formatRound(c("ERA", "WHIP", "ERA.p", "WHIP.p"), digits = c(2,3,2,3))
     })
 })
