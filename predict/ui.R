@@ -12,7 +12,9 @@ shinyUI(fluidPage(
         mainPanel(
 
             # This is where the generated table lives
-            dataTableOutput("table")
+            dataTableOutput("table"),
+            dataTableOutput("starters"),
+            dataTableOutput("closers")
         )
     )
 ))

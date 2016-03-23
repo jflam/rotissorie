@@ -7,6 +7,13 @@ library(dplyr)
 source("baseball_knn.R")
 results <- predict_batting_statistics(2014, 30, 100)
 predictions <- results$predictions
+
+pitchers <- predict_pitching_statistics(2014, 30, 10)
+starters <- pitchers$predictions %>%
+    filter(GS > 10)
+closers <- pitchers$predictions %>%
+    filter(SV > 10)
+
 positions = c("C", "1B", "2B", "3B", "SS", "OF")
 
 shinyServer(function(input, output) {
@@ -28,5 +35,15 @@ shinyServer(function(input, output) {
                 filter(POS == input$position) %>% mutate(AVG = H/AB)
         ) %>%
         formatRound("AVG", digits = 3)
+    })
+
+    output$starters <- renderDataTable({
+        datatable(starters) %>%
+            formatRound(c("ERA", "WHIP", "ERA.p", "WHIP.p"), digits = 3)
+    })
+
+    output$closers <- renderDataTable({
+        datatable(closers) %>%
+            formatRound(c("ERA", "WHIP", "ERA.p", "WHIP.p"), digits = 3)
     })
 })

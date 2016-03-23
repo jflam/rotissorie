@@ -7,6 +7,174 @@ pitching <- read.csv("../pitching.csv", stringsAsFactors = FALSE)
 player_names <- read.csv("../master.csv", stringsAsFactors = FALSE)
 fielding <- read.csv("../fielding.csv", stringsAsFactors = FALSE)
 
+predict_pitching_statistics <- function(prediction_year, years_to_train, minimum_game_threshold) {
+    start_training_year = prediction_year - years_to_train
+
+    # Pitching statistics have line items for each team a player played on during the year
+    rollup_pitching <- pitching %>%
+        filter(yearID >= start_training_year & G > minimum_game_threshold) %>%
+        group_by(yearID, playerID) %>%
+        summarize(
+            W = sum(W),
+            L = sum(L),
+            G = sum(G),
+            GS = sum(GS),
+            SV = sum(SV),
+            H = sum(H),
+            BB = sum(BB),
+            ER = sum(ER),
+            IPouts = sum(IPouts),
+            SO = sum(SO)
+        ) %>%
+        mutate(
+            ERA = ER / (IPouts / 3 / 9),
+            WHIP = (BB + H) / (IPouts / 3),
+            ID = sprintf("%s-%s", playerID, yearID)
+        ) %>%
+        as.data.frame()
+
+    training_set <- rollup_pitching %>%
+        filter(yearID < prediction_year)
+
+    testing_set <- rollup_pitching %>%
+        filter(yearID == prediction_year)
+
+    player_ids <- intersect(
+        testing_set %>%
+            select(playerID),
+        rollup_pitching %>%
+            filter(yearID == prediction_year + 1) %>%
+            select(playerID)
+    )
+
+    answer_set <- rollup_pitching %>%
+        filter(yearID == 2015) %>%
+        inner_join(player_ids, by = "playerID")
+
+    testing_set <- testing_set %>%
+        inner_join(player_ids, by = "playerID")
+
+    # Extract just the features that we want by excluding
+    # first two and last columns
+    cols_to_select <- ncol(training_set) - 1
+    training <- training_set[3:cols_to_select]
+    testing <- testing_set[3:cols_to_select]
+    answer <- answer_set[3:cols_to_select]
+
+    # Now train the model using knn
+    library(class)
+    results <- knn(training, testing, training_set$ID, k = 3)
+
+    # Construct a table that contains tuples of (playerID, predictedPlayerID)
+    similarity_results <- data.frame(
+        playerID = testing_set$playerID,
+        stringsAsFactors = FALSE)
+    similarity_results$referenceID = as.character(results)
+
+    similarity_stats <- similarity_results %>%
+        inner_join(player_names, by = "playerID") %>%
+        inner_join(testing_set, by = "playerID") %>%
+        inner_join(training_set, by = c("referenceID" = "ID")) %>%
+        select(
+            FirstName = nameFirst,
+            LastName = nameLast,
+            PlayerID = playerID.x,
+            W = W.x,
+            L = L.x,
+            G = G.x,
+            GS = GS.x,
+            SV = SV.x,
+            H = H.x,
+            BB = BB.x,
+            ER = ER.x,
+            SO = SO.x,
+            ERA = ERA.x,
+            WHIP = WHIP.x,
+            ReferenceID = playerID.y,
+            YearID = yearID.y,
+            W.p = W.y,
+            L.p = L.y,
+            G.p = G.y,
+            GS.p = GS.y,
+            SV.p = SV.y,
+            H.p = H.y,
+            BB.p = BB.y,
+            ER.p = ER.y,
+            SO.p = SO.y,
+            ERA.p = ERA.y,
+            WHIP.p = WHIP.y
+        )
+
+    similarity_stddev <- data.frame(
+        W.sd = sd(similarity_stats$W - similarity_stats$W.p),
+        L.sd = sd(similarity_stats$L - similarity_stats$L.p),
+        G.sd = sd(similarity_stats$G - similarity_stats$G.p),
+        GS.sd = sd(similarity_stats$GS - similarity_stats$GS.p),
+        SV.sd = sd(similarity_stats$SV - similarity_stats$SV.p),
+        H.sd = sd(similarity_stats$H - similarity_stats$H.p),
+        BB.sd = sd(similarity_stats$BB - similarity_stats$BB.p),
+        ER.sd = sd(similarity_stats$ER - similarity_stats$ER.p),
+        SO.sd = sd(similarity_stats$SO - similarity_stats$SO.p),
+        ERA.sd = sd(similarity_stats$ERA - similarity_stats$ERA.p),
+        WHIP.sd = sd(similarity_stats$WHIP - similarity_stats$WHIP.p)
+    )
+    
+    prediction_stats <- similarity_stats %>%
+        select(FirstName, LastName, PlayerID, ReferenceID, YearID) %>%
+        mutate(YearID = YearID + 1) %>%
+        inner_join(answer_set, by = c("PlayerID" = "playerID")) %>%
+        inner_join(training_set, by = c("ReferenceID" = "playerID", "YearID" = "yearID")) %>%
+        select(
+            FirstName,
+            LastName,
+            PlayerID,
+            W = W.x,
+            L = L.x,
+            G = G.x,
+            GS = GS.x,
+            SV = SV.x,
+            H = H.x,
+            BB = BB.x,
+            ER = ER.x,
+            SO = SO.x,
+            ERA = ERA.x,
+            WHIP = WHIP.x,
+            ReferenceID,
+            YearID,
+            W.p = W.y,
+            L.p = L.y,
+            G.p = G.y,
+            GS.p = GS.y,
+            SV.p = SV.y,
+            H.p = H.y,
+            BB.p = BB.y,
+            ER.p = ER.y,
+            SO.p = SO.y,
+            ERA.p = ERA.y,
+            WHIP.p = WHIP.y
+        )
+
+    # Compute standard deviation in difference between actual and prediction
+    prediction_stddev <- data.frame(
+        W.sd = sd(prediction_stats$W - prediction_stats$W.p),
+        L.sd = sd(prediction_stats$L - prediction_stats$L.p),
+        G.sd = sd(prediction_stats$G - prediction_stats$G.p),
+        GS.sd = sd(prediction_stats$GS - prediction_stats$GS.p),
+        SV.sd = sd(prediction_stats$SV - prediction_stats$SV.p),
+        H.sd = sd(prediction_stats$H - prediction_stats$H.p),
+        BB.sd = sd(prediction_stats$BB - prediction_stats$BB.p),
+        ER.sd = sd(prediction_stats$ER - prediction_stats$ER.p),
+        SO.sd = sd(prediction_stats$SO - prediction_stats$SO.p),
+        ERA.sd = sd(prediction_stats$ERA - prediction_stats$ERA.p),
+        WHIP.sd = sd(prediction_stats$WHIP - prediction_stats$WHIP.p)
+    )
+
+    # Construct list with results - predictions and standard deviation of the predictions
+    list(predictions = prediction_stats, stddev = prediction_stddev)
+}
+
+
+
 # Parameters:
 # 1. Year to predict
 # 2. Year to compare against
