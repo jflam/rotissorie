@@ -387,9 +387,6 @@ predict_batting_statistics_naive <- function(prediction_year, minimum_game_thres
     testing_set <- rollup_batting %>%
         filter(yearID == prediction_year & G > minimum_game_threshold)
 
-    testing_set <- testing_set %>%
-        inner_join(player_ids, by = "playerID")
-
     answer_set <- rollup_batting %>%
         filter(yearID == prediction_year + 1 & G > minimum_game_threshold)
 
@@ -397,6 +394,52 @@ predict_batting_statistics_naive <- function(prediction_year, minimum_game_thres
     testing_set <- result$lhs
     answer_set <- result$rhs
 
-    prediction_stats <- data.frame(
-    )
+    prediction_stats <- testing_set %>%
+        inner_join(player_names, by = "playerID") %>%
+        inner_join(answer_set, by = "playerID") %>%
+        select(
+            FirstName = nameFirst,
+            LastName = nameLast,
+            PlayerID = playerID,
+            G = G.x,
+            AB = AB.x,
+            R = R.x,
+            H = H.x,
+            X2B = X2B.x,
+            X3B = X3B.x,
+            HR = HR.x,
+            RBI = RBI.x,
+            SO = SO.x,
+            SB = SB.x,
+            BB = BB.x,
+            G.p = G.y,
+            AB.p = AB.y,
+            R.p = R.y,
+            H.p = H.y,
+            X2B.p = X2B.y,
+            X3B.p = X3B.y,
+            HR.p = HR.y,
+            RBI.p = RBI.y,
+            SO.p = SO.y,
+            SB.p = SB.y,
+            BB.p = BB.y)
+
+    # Compute standard deviation in difference between actual and prediction
+    prediction_stddev <- data.frame(
+        G.rms = sd(prediction_stats$G - prediction_stats$G.p),
+        AB.rms = sd(prediction_stats$AB - prediction_stats$AB.p),
+        R.rms = sd(prediction_stats$R - prediction_stats$R.p),
+        H.rms = sd(prediction_stats$H - prediction_stats$H.p),
+        X2B.rms = sd(prediction_stats$X2B - prediction_stats$X2B.p),
+        X3B.rms = sd(prediction_stats$X3B - prediction_stats$X3B.p),
+        HR.rms = sd(prediction_stats$HR - prediction_stats$HR.p),
+        RBI.rms = sd(prediction_stats$RBI - prediction_stats$RBI.p),
+        SO.rms = sd(prediction_stats$SO - prediction_stats$SO.p),
+        SB.rms = sd(prediction_stats$SB - prediction_stats$SB.p),
+        BB.rms = sd(prediction_stats$BB - prediction_stats$BB.p))
+
+    list(predictions = prediction_stats, stddev = prediction_stddev)
 }
+
+p1 <- predict_batting_statistics(2014, 30, 100)
+p2 <- predict_batting_statistics_naive(2014, 100)
