@@ -56,6 +56,18 @@ rollup_batting <- batting %>%
         ID = sprintf("%s-%s", playerID, yearID)) %>%
     as.data.frame()
 
+get_intersection_by_playerid <- function(lhs, rhs) {
+    player_ids <- intersect(
+        lhs %>% select(playerID),
+        rhs %>% select(playerID)
+    )
+
+    list(
+        lhs = lhs %>% inner_join(player_ids, by = "playerID"),
+        rhs = rhs %>% inner_join(player_ids, by = "playerID")
+    )
+}
+
 predict_pitching_statistics <- function(prediction_year, years_to_train, minimum_game_threshold) {
     start_training_year = prediction_year - years_to_train
 
@@ -65,20 +77,12 @@ predict_pitching_statistics <- function(prediction_year, years_to_train, minimum
     testing_set <- rollup_pitching %>%
         filter(yearID == prediction_year & G > minimum_game_threshold)
 
-    player_ids <- intersect(
-        testing_set %>%
-            select(playerID),
-        rollup_pitching %>%
-            filter(yearID == prediction_year + 1 & G > minimum_game_threshold) %>%
-            select(playerID)
-    )
-
     answer_set <- rollup_pitching %>%
-        filter(yearID == 2015 & G > minimum_game_threshold) %>%
-        inner_join(player_ids, by = "playerID")
+        filter(yearID == prediction_year + 1 & G > minimum_game_threshold)
 
-    testing_set <- testing_set %>%
-        inner_join(player_ids, by = "playerID")
+    result <- get_intersection_by_playerid(testing_set, answer_set)
+    testing_set <- result$lhs
+    answer_set <- result$rhs
 
     # Extract just the features that we want by excluding
     # first two and last columns
@@ -221,19 +225,12 @@ predict_batting_statistics <- function(prediction_year, years_to_train, minimum_
     testing_set <- rollup_batting %>%
         filter(yearID == prediction_year & G > minimum_game_threshold)
 
-    player_ids <- intersect(
-        testing_set %>%
-            select(playerID),
-        rollup_batting %>%
-            filter(yearID == prediction_year + 1 & G > minimum_game_threshold) %>%
-            select(playerID))
-
     answer_set <- rollup_batting %>%
-        filter(yearID == prediction_year + 1 & G > minimum_game_threshold) %>%
-        inner_join(player_ids, by = "playerID")
+        filter(yearID == prediction_year + 1 & G > minimum_game_threshold)
 
-    testing_set <- testing_set %>%
-        inner_join(player_ids, by = "playerID")
+    result <- get_intersection_by_playerid(testing_set, answer_set)
+    testing_set <- result$lhs
+    answer_set <- result$rhs
 
     # Extract just the features that we want by excluding
     # first two and last columns
@@ -390,19 +387,15 @@ predict_batting_statistics_naive <- function(prediction_year, minimum_game_thres
     testing_set <- rollup_batting %>%
         filter(yearID == prediction_year & G > minimum_game_threshold)
 
-    player_ids <- intersect(
-        testing_set %>%
-            select(playerID),
-        rollup_batting %>%
-            filter(yearID == prediction_year + 1 & G > minimum_game_threshold) %>%
-            select(playerID))
-
-    answer_set <- rollup_batting %>%
-        filter(yearID == prediction_year + 1 & G > minimum_game_threshold) %>%
-        inner_join(player_ids, by = "playerID")
-
     testing_set <- testing_set %>%
         inner_join(player_ids, by = "playerID")
+
+    answer_set <- rollup_batting %>%
+        filter(yearID == prediction_year + 1 & G > minimum_game_threshold)
+
+    result <- get_intersection_by_playerid(testing_set, answer_set)
+    testing_set <- result$lhs
+    answer_set <- result$rhs
 
     prediction_stats <- data.frame(
     )
