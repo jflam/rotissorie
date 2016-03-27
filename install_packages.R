@@ -3,7 +3,8 @@
 # list. Will do the right thing if not present.
 
 required_packages <- c(
-    "gmodels"
+    "gmodels",
+    "RODBC"
 )
 
 install_package_if_necessary <- function(package) {
